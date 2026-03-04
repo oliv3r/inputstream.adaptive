@@ -377,6 +377,10 @@ void ADP::KODI_PROPS::CCompKodiProps::ParseManifestConfig(const std::string& dat
     {
       m_manifestConfig.liveDelay = jDictVal.GetUint64();
     }
+    else if (configName == "live_offset" && jDictVal.IsUint64())
+    {
+      m_manifestConfig.liveOffset = jDictVal.GetUint64();
+    }
     else
     {
       LOG::LogF(LOGERROR, "Unsupported \"%s\" config or wrong data type on \"%s\" property",
