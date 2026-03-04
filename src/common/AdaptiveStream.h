@@ -69,7 +69,7 @@ enum class EVENT_TYPE
      *        downloads must be already stopped with Stop() before call this method.
      */
     void DisposeWorker();
-    uint64_t getMaxTimeMs();
+    uint64_t getMaxTimeMs() const;
 
     void Disable();
 

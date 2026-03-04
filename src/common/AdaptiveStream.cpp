@@ -1099,7 +1099,7 @@ bool AdaptiveStream::retrieveCurrentSegmentBufferSize(size_t& size)
   return true;
 }
 
-uint64_t AdaptiveStream::getMaxTimeMs()
+uint64_t AdaptiveStream::getMaxTimeMs() const
 {
   if (current_rep_->Timeline().IsEmpty())
     return 0;

@@ -344,6 +344,8 @@ protected:
                                    std::vector<std::string_view> keySystems);
 
 private:
+  uint64_t GetLiveEdgeMs() const;
+
   std::string m_manifestUrl;
   std::vector<uint8_t> m_serverCertificate;
   std::unique_ptr<kodi::tools::CDllHelper> m_dllHelper;
