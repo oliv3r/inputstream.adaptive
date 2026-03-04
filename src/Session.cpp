@@ -1449,7 +1449,10 @@ int CSession::GetChapterCount() const
   if (!m_adaptiveTree)
     return 0;
 
-  return static_cast<int>(m_adaptiveTree->m_periods.size());
+  int count = static_cast<int>(m_adaptiveTree->m_periods.size());
+  if (count > 0 && m_adaptiveTree->IsLive())
+    count += 1;
+  return count;
 }
 
 std::string CSession::GetChapterName(int ch) const
@@ -1459,6 +1462,8 @@ std::string CSession::GetChapterName(int ch) const
     --ch;
     if (ch >= 0 && ch < static_cast<int>(m_adaptiveTree->m_periods.size()))
       return m_adaptiveTree->m_periods[ch]->GetId().data();
+    if (ch == static_cast<int>(m_adaptiveTree->m_periods.size()) && m_adaptiveTree->IsLive())
+      return "Live";
   }
 
   return "[Unknown]";
@@ -1466,8 +1471,21 @@ std::string CSession::GetChapterName(int ch) const
 
 int64_t CSession::GetChapterPos(int ch) const
 {
+  if (!m_adaptiveTree)
+    return 0;
+
   int64_t sum{0};
   --ch;
+
+  if (m_adaptiveTree->IsLive() && ch == static_cast<int>(m_adaptiveTree->m_periods.size()))
+    return static_cast<int64_t>(m_adaptiveTree->m_totalTime / 1000);
+
+  if (ch < 0 || ch >= static_cast<int>(m_adaptiveTree->m_periods.size()))
+    return 0;
+
+  if (ch == 0 && m_adaptiveTree->IsLive() && m_adaptiveTree->m_periods.size() == 1 &&
+      m_adaptiveTree->m_liveOffset > 0)
+    return static_cast<int64_t>(m_adaptiveTree->m_liveOffset);
 
   for (; ch; --ch)
   {
@@ -1516,6 +1534,24 @@ bool CSession::SeekChapter(int ch)
     return true;
 
   --ch;
+
+  if (m_adaptiveTree->IsLive() && ch == static_cast<int>(m_adaptiveTree->m_periods.size()))
+  {
+    LOG::LogF(LOGDEBUG, "Seeking to live edge (virtual chapter)");
+    uint64_t maxTime{0};
+    for (auto& stream : m_streams)
+    {
+      if (stream->m_isEnabled)
+      {
+        uint64_t curTime = stream->m_adStream.getMaxTimeMs();
+        if (curTime > maxTime)
+          maxTime = curTime;
+      }
+    }
+    SeekTime(static_cast<double>(maxTime > 0 ? maxTime : m_adaptiveTree->m_totalTime) / 1000, 0, false);
+    return true;
+  }
+
   if (ch >= 0 && ch < static_cast<int>(m_adaptiveTree->m_periods.size()) &&
       m_adaptiveTree->m_periods[ch].get() != m_adaptiveTree->m_currentPeriod)
   {
@@ -1533,6 +1569,13 @@ bool CSession::SeekChapter(int ch)
         sr->Reset(true);
       }
     }
+    return true;
+  }
+  else if (ch >= 0 && ch < static_cast<int>(m_adaptiveTree->m_periods.size()))
+  {
+    double startTime = static_cast<double>(GetChapterPos(ch + 1));
+    LOG::LogF(LOGDEBUG, "Seeking to start of current Period (startTime=%.3f)", startTime);
+    SeekTime(startTime, 0, false);
     return true;
   }
   return false;
