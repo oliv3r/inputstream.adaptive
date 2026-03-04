@@ -68,6 +68,8 @@ struct ManifestConfig
   bool hlsFixDiscontSequence{false};
   // Custom delay from LIVE edge in seconds
   uint64_t liveDelay{0};
+  // Apply an offset in seconds from the live start (e.g. to skip pre-program buffered content)
+  uint64_t liveOffset{0};
 };
 
 struct DrmCfg
